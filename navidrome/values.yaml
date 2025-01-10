@@ -54,9 +54,9 @@ enableInsightsCollector: true #Controls whether the server will run its Anonymou
 
 advancedConfiguration:  #A list of environment variables which can be overridden. See https://www.navidrome.org/docs/usage/configuration-options/
 #  - name: ND_ENABLEDOWNLOADS
-#    value: true
+#    value: "true"
 #  - name: ND_ENABLESHARING
-#    value: false
+#    value: "false"
     #...
 
 
