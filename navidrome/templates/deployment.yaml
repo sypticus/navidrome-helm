@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "navidrome.fullname" . }}
+  labels:
+    {{- include "navidrome.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "navidrome.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "navidrome.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "navidrome.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+      {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+      {{- end }}
+      {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+      {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          env:
+            - name: ND_LOGLEVEL
+              value: {{ .Values.logLevel }}
+            - name: ND_PORT
+              value: {{ .Values.service.port | quote }}
+            - name: ND_MUSICFOLDER
+              value: {{ .Values.musicFolder }}
+            - name: ND_DATAFOLDER
+              value: {{ .Values.dataFolder }}
+            - name: ND_CACHEFOLDER
+              value: {{ .Values.cacheFolder }}
+            - name: ND_ENABLEINSIGHTSCOLLECTOR
+              value: {{ .Values.enableInsightsCollector  | quote }}
+
+                {{- with .Values.advancedConfiguration }}
+                  {{- toYaml . | nindent 12 }}
+                {{- end }}
+
+          volumeMounts:
+          {{- if .Values.persistence.enabled }}
+            - name: music
+              mountPath: {{ .Values.persistence.music.mountPath }}
+          {{- else }}
+            - name: music
+              mountPath: {{ .Values.musicFolder}}
+          {{- end }}
+            - name: appdata
+              mountPath: {{ .Values.dataFolder }}
+        {{- with .Values.persistence.additionalVolumeMounts }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+
+
+
+      volumes:
+      {{- if .Values.persistence.enabled }}
+      {{- if .Values.persistence.appData.existingClaim }}
+        - name: "appdata"
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.appData.existingClaim }}
+      {{- else }}
+        - name: "appdata"
+          persistentVolumeClaim:
+            claimName: "navidrome-data"
+      {{- end }}
+
+        
+      {{- if .Values.persistence.music.existingClaim }}
+        - name: "music"
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.music.existingClaim }}
+      {{- else }}
+        - name: "music"
+          persistentVolumeClaim:
+            claimName: "music-storage"
+      {{- end }}
+      {{- if .Values.persistence.additionalVolumes }}
+        {{ toYaml .Values.extraVolumes | nindent 8}}
+      {{- end }}
+      {{- else }}
+
+        - name: "appdata"
+          emptyDir: { }
+        - name: "music"
+          emptyDir: { }
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
