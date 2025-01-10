@@ -9,7 +9,7 @@ https://github.com/sypticus/navidrome-helm.git
 
 ```console
 git clone https://github.com/sypticus/navidrome-helm.git
-`helm install navidrome ./navidrome -n navidrome --create-namespace`
+helm install navidrome ./navidrome -n navidrome --create-namespace
 ```
 
 You should then be able to access the UI.
