@@ -23,7 +23,7 @@ In a browser window open http://localhost:4533
 ## Uninstalling the Chart
 
 ```console
-helm delete jacket
+helm delete navidrome -n navidrome
 ```
 
 
